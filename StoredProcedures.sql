@@ -32,17 +32,19 @@ USE `mydb`;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarBairro`(in nomeBairro text, in nomeCidade text, in nomeEstado text )
 BEGIN
 
-if ((select exists (select * from cidade where nome = nomeCidade)) = 0) 
-then call CriarCidade(nomeCidade, nomeEstado);
-end if;
+
+call CriarCidade(nomeCidade, nomeEstado);
 
 insert into bairro (nome, Cidade_idCidade)
-values (nomeBairro, (select idCidade from cidade where nome = nomeCidade));
+select * from ( select nomeBairro, (select idCidade from cidade where nome = nomeCidade)) as tmp
+where not exists (select * from bairro where bairro.nome = nomeBairro and Cidade_idCidade = (select idCidade from cidade where cidade.nome = nomeCidade));
+
+
 
 END ;;
 DELIMITER ;
@@ -58,17 +60,18 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarCidade`(in nomeCidade text, in nomeEstado text)
 BEGIN
 
-if ((select exists (select * from estado where nome = nomeEstado)) = 0) 
-then call CriarEstado(nomeEstado);
-end if;
+
+call CriarEstado(nomeEstado);
+
 
 insert into cidade (nome, Estado_idEstado)
-values (nomeCidade, (select idEstado from estado where nome = nomeEstado));
+select * from (select nomeCidade, (select idEstado from estado where nome = nomeEstado)) as tmp
+where not exists (select * from cidade where cidade.nome = nomeCidade and Estado_idEstado = (select idEstado from estado where estado.nome = nomeEstado));
 
 END ;;
 DELIMITER ;
@@ -84,18 +87,17 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarEndereco`(in rua text, numero text, cep text, complemento text, Tipo_endereco varchar(45), bairro text, cidade text, estado text)
 BEGIN
 
-if ((select exists (select * from tipo_endereco where nome = Tipo_endereco)) = 0) 
-then call CriarTipoEndereco(Tipo_endereco);
-end if;
 
-if ((select exists (select * from bairro where nome = bairro)) = 0) 
-then call CriarBairro(bairro, cidade, estado);
-end if;
+call CriarTipoEndereco(Tipo_endereco);
+
+
+call CriarBairro(bairro, cidade, estado);
+
 	
 insert into endereco (rua, numero, cep, complemento, Tipo_endereco_idTipo_endereco, Bairro_idBairro)
 values (rua, numero, cep, complemento, (select idTipo_endereco from tipo_endereco where nome = Tipo_endereco), (select idBairro from bairro where nome = bairro));
@@ -114,12 +116,14 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarEscolaridade`( in nome varchar(45))
 BEGIN
+if not exists (select * from escolaridade where escolaridade.nome = nome) then
 insert into escolaridade (nome)
 values (nome);
+end if;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -134,12 +138,14 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarEstado`(in estado text)
 BEGIN
+if not exists (select * from estado where estado.nome = estado) then
 insert into estado (nome)
 values (estado);
+end if;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -158,8 +164,10 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarEstadoCivil`(in nome varchar(45))
 BEGIN
+if not exists (select * from estado_civil where nome = nome) then
 insert into estado_civil (nome)
 values (nome);
+end if;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -194,41 +202,37 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPF`(nome text,
- cpf varchar(11),
- sexo varchar(45),
- escolaridade varchar(45),
- data_nasc date,
- fornecedor bit(1),
- estado_civil varchar(45),
- email text,
- identidade varchar(7),
- cidade text,
- estado text)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPF`(
+in nome TEXT,
+ in cpf varchar(11),
+ in sexo text,
+ in escolaridade text,
+ in data_nasc DATE,
+ in fornecedor BIT(1),
+ in estado_civil text,
+ in email TEXT,
+ in identidade text,
+ in cidade TEXT,
+ in estado TEXT)
 BEGIN
 
-if (select exists (select * from sexo where nome = sexo))= false then
+if (not exists (select * from sexo where nome = sexo)) then
  call CriarSexo(sexo);
 end if;
 
-if ((select exists (select * from escolaridade where nome = escolaridade))=false)
-then call CriarEscolaridade(escolaridade);
+if ((select exists (select * from escolaridade where nome = escolaridade))=0) then call CriarEscolaridade(escolaridade);
 end if;
 
-if ((select exists (select * from estado_civil where nome = estado_civil))=false)
-then call CriarEstadoCivil(estado_civil);
+if ((select exists (select * from estado_civil where nome = estado_civil))=0) then call CriarEstadoCivil(estado_civil);
 end if;
 
-if ((select exists (select * from cidade where nome = cidade))=false)
-then call CriarCidade(cidade, estado);
+if ((select exists (select * from cidade where nome = cidade))=0) then call CriarCidade(cidade, estado);
 end if;
-
-call CriarPessoa(nome);
 
 insert into pessoa_fisica (Pessoa_idPessoa, cpf, Sexo_idSexo, Escolaridade_idEscolaridade, data_nasc, fornecedor, Estado_civil_idEstado_civil, email, identidade, Cidade_idCidade)
-values (last_insert_id(), cpf, (select idSexo from sexo where nome = sexo), (select idEscolaridade from escolaridade where nome = escolaridade), data_nasc, fornecedor, (select idEstado_civil from estado_civil where nome = estado_civil), email, identidade, (select idCidade from cidade where nome = cidade));
+values (159, '01433333333', (select idSexo from sexo where nome = 'Masculino'), (select idEscolaridade from escolaridade where nome = 'Ensino Superior Completo'), '2012-12-12', 0, (select idEstado_civil from estado_civil where nome = 'Solteiro(a)'), 'bug@bug.com', '1234567', (select idCidade from cidade where nome = 'Brasília')); 
 
 END ;;
 DELIMITER ;
@@ -248,8 +252,14 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarSetor`( in nome text )
 BEGIN
+
+if not exists (select * from setor where nome = nome) then
+
 insert into setor (nome)
 values (nome);
+
+end if;
+
 
 END ;;
 DELIMITER ;
@@ -269,8 +279,11 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarSexo`(in sexo varchar(45))
 BEGIN
+
+if not exists (select * from sexo where nome = sexo) then
 insert into sexo (nome)
 values (sexo);
+end if;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -289,9 +302,8 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTelefone`(in numero text, tipo_telefone  varchar(45))
 BEGIN
-if ((select exists (select * from tipo_telefone where nome = tipo_telefone)) = 0) 
-then call CriarTipoTelefone(tipo_telefone);
-end if;
+
+ call CriarTipoTelefone(tipo_telefone);
 
 insert into telefone (numero, Tipo_telefone_idTipo_Telefone)
 values (numero, (select idTipo_Telefone from tipo_telefone where nome = tipo_telefone));
@@ -309,12 +321,16 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTipoEndereco`(in nome varchar(45))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTipoEndereco`(in nome text)
 BEGIN
+
+if (not exists (select * from  tipo_endereco where tipo_endereco.nome = nome)) then
 insert into tipo_endereco (nome)
 values (nome);
+end if;
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -329,12 +345,49 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTipoTelefone`(in nome varchar(45))
 BEGIN
+if not exists (select * from tipo_telefone where tipo_telefone.nome = nome) then
 insert into tipo_telefone (nome)
 values (nome);
+end if;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `testinho` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `testinho`(
+in sexo varchar(45),
+in cpf varchar(11),
+in nome text,
+in escolaridade varchar(45),
+in data_nasc date,
+in fornecedor bit(1),
+in estado_civil varchar(45),
+in email text,
+in identidade varchar(7),
+in cidade text,
+in estado text)
+BEGIN
+
+IF NOT EXISTS (SELECT * FROM sexo WHERE nome = sexo)
+THEN
+call CriarSexo(sexo);
+end if;
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -351,4 +404,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-18 23:38:37
+-- Dump completed on 2020-11-19 13:17:10

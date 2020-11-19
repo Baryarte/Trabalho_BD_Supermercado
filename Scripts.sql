@@ -62,10 +62,13 @@ call CriarBairro('Acrelândia', 'Acrelândia', 'Acre');
 -- delete from bairro;
 select * from bairro;
 
+(select * from bairro where bairro.nome = 'Acrelândia' and Cidade_idCidade = (select idCidade from cidade where cidade.nome = 'Acrelândia'));
+
 call CriarTipoEndereco('Residencial');
 call CriarTipoEndereco('Comercial');
 -- delete from Tipo_endereco;
 select * from tipo_endereco;
+
 
 call CriarEndereco('7 de setembro', '29', '69945000', 'Casa', 'Residencial', 'Acrelândia', 'Acrelândia', 'Acre');
 call CriarEndereco('Avenida Princesa Isabel', '392', '22011010', 'Hotel', 'Comercial', 'Copacabana', 'Rio de Janeiro', 'Rio de Janeiro');
@@ -104,9 +107,21 @@ select * from estado_civil;
 
 call CriarPessoa('Alexandre Comunista');
 select * from pessoa;
+select exists (SELECT * FROM sexo WHERE nome = "Masculino");
+select exists (select * from sexo where nome = 'Masculino')  = 0;
+SELECT idSexo FROM sexo WHERE nome = 'Masculino';
+-- insert into pessoa_fisica (Pessoa_idPessoa, cpf, Sexo_idSexo, Escolaridade_idEscolaridade, data_nasc, fornecedor, Estado_civil_idEstado_civil, email, identidade, Cidade_idCidade)
+-- values (159, '01433333333', (select idSexo from sexo where nome = 'Masculino'), (select idEscolaridade from escolaridade where nome = 'Ensino Superior Completo'), '2012-12-12', 0, (select idEstado_civil from estado_civil where nome = 'Solteiro(a)'), 'bug@bug.com', '1234567', (select idCidade from cidade where nome = 'Brasília')); 
 
-call CriarPessoaFisica('Ediasdanho', '01578956321', 'Masculino', 'Ensino Superior Incompleto', '1998-05-02', 0, 'Solteiro(a)', 'edinho@teste.com', '2780555', 'Brasília', 'Distrito Federal');
+-- call CriarPF("Ediasdanho", "01578956321", "Masculino", "Ensino Superior Incompleto", "1998-05-02", 0, "Solteiro(a)", "edinho@teste.com", "2780555", "Brasília", "Distrito Federal");
+-- call testinho("Feminino", "01578956321", 'blabla' , "Ensino Superior Incompleto", "1998-05-02", 0, "Solteiro(a)", "edinho@teste.com", "2780555", "Brasilia", "Distrito Federal");
+-- call CriarPF('Fulano', '123456', 'Feminino', 'Ensino Superior Incompleto', '1995-04-04', 1,  'Solteiro(a)','edinho@bug.com', '1111111', 'Brasília', 'Distrito Federal'); select * from sexo;
+-- select  NOT EXISTS (select * from sexo where nome = 'Masculina');
+-- call testinho('Masculina');
+
+select * from sexo;
 select * from pessoa_fisica;
+
 
 
 
