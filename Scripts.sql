@@ -13,7 +13,10 @@
 -- VALUES (last_insert_id(), 01455588822, (select idSexo from sexo where descricao = 'Feminino'),  'Ensino médio completo', '1997-12-09', 0 );
 
 select * from funcionario;
-
+delete from marca;
+delete from desconto;
+delete from cliente;
+delete from desconto;
 delete from telefone_tem_pessoa;
 delete from pessoa_tem_endereco;
 delete from pessoa_juridica;
@@ -202,3 +205,26 @@ select * from pessoa;
 CALL `mydb`.`CriarCliente`('Pietro Giovanni', '10987654321', 'Masculino', 'Ensino Médio Completo', '1996-11-19', 0, 'Viúvo(a)', 'pietro@giovanni.com', '2734111', 'Curitiba', 'Paraná', (select matricula from funcionario where funcionario.Pessoa_fisica_Pessoa_idPessoa = (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678912')));
 CALL `mydb`.`CriarCliente`('Roberta Castilho', '78945685215', 'Feminino', 'Ensino Superior Completo', '1989-12-26', 0, 'Separado(a)', 'roberta@castilho.com', '7458962', 'Touro Morto', 'Mato Grosso do Sul', (select matricula from funcionario where funcionario.Pessoa_fisica_Pessoa_idPessoa = (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678912')));
 CALL `mydb`.`CriarCliente`('Vitória Secredos', '17584652319', 'Feminino', 'Ensino Superior Incompleto', '1979-04-17', 0, 'Divorciado(a)', 'vitoria@secreta.com', '4659873', 'Kadiwéu', 'Mato Grosso do Sul', (select matricula from funcionario where funcionario.Pessoa_fisica_Pessoa_idPessoa = (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')));
+CALL `mydb`.`CriarCliente`('Já Queline', '09568732456', 'Feminino', 'Ensino Fundamental Completo', '1985-09-11', 0, 'Divorciado(a)', 'ja@queline.com', '5437698', 'Brasília', 'Distrito Federal', (select matricula from funcionario where funcionario.Pessoa_fisica_Pessoa_idPessoa = (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')));
+CALL `mydb`.`CriarCliente`('Marivaldo Pereira', '32143267351', 'Outro', 'Ensino Superior Completo', '1992-02-01', 0, 'Solteiro(a)', 'marivaldo@pereira.com', '5463411', 'Brasília', 'Distrito Federal', (select matricula from funcionario where funcionario.Pessoa_fisica_Pessoa_idPessoa = (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')));
+select * from cliente;
+
+CALL `mydb`.`CriarDesconto`('Dia dos Pais', '0.25', '2020-08-12');
+CALL `mydb`.`CriarDesconto`('Dia das Mães', '0.30', '2020-05-14');
+CALL `mydb`.`CriarDesconto`('Black Friday', '0.40', '2020-11-30');
+CALL `mydb`.`CriarDesconto`('Natal', '0.25', '2020-12-30');
+CALL `mydb`.`CriarDesconto`('Desconto da semana', '0.15', '2020-11-28');
+select * from desconto;
+
+CALL `mydb`.`CriarMarca`('Ypê', 'Desconto da semana', '2020-11-28', '01234567891012');
+CALL `mydb`.`CriarMarca`('Playstation', 'Black Friday', '2020-11-30', '01234567891013');
+CALL `mydb`.`CriarMarca`('Xbox', 'Black Friday', '2020-11-30', '01234567891014');
+CALL `mydb`.`CriarMarca`('Arroz', 'Black Friday', '2020-11-30', '01234567891011');
+CALL `mydb`.`CriarMarca`('iPhone', 'Black Friday', '2020-11-30', '01234567891015');
+CALL `mydb`.`PessoaPessoaJuridicaMarca`();
+
+-- tipo_mercadoria, mercadoria, atualizado_em, historico_desconto, tipo_pagamento, forma_pagamento. 
+
+
+
+

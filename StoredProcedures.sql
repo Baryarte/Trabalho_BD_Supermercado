@@ -152,6 +152,28 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarDesconto` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarDesconto`(nome varchar(200), valor float, validade date)
+BEGIN
+	
+insert into desconto (nome, valor, validade)
+values (nome, valor, validade);    
+    
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `CriarEndereco` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -285,6 +307,28 @@ call CriarPessoaFisica(nome, cpf, sexo, escolaridade, data_nasc, fornecedor, est
 
 insert into funcionario (Pessoa_fisica_Pessoa_idPessoa, comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, Cargo_idCargo, Funcionario_Pessoa_fisica_Pessoa_idPessoa, ativo)
 values (last_insert_id(), comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, (select idCargo from cargo where cargo.nome = cargo), (select A.Pessoa_fisica_Pessoa_idPessoa from funcionario A where A.matricula = matricula_criador), ativo);
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarMarca` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMarca`(nome varchar(75), desconto varchar(200), validade_desconto date, cnpj varchar(14))
+BEGIN
+
+insert into marca (nome, Desconto_idDesconto, Pessoa_juridica_Pessoa_idPessoa)
+values (nome, (select idDesconto from desconto where desconto.nome = desconto and desconto.validade = validade_desconto), (select Pessoa_idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj));
 
 END ;;
 DELIMITER ;
@@ -633,6 +677,38 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `PessoaPessoaJuridicaMarca` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `PessoaPessoaJuridicaMarca`()
+BEGIN
+SELECT a. * , b. * , c. *
+FROM pessoa a
+LEFT OUTER JOIN pessoa_juridica b on a.idPessoa=b.Pessoa_idPessoa
+LEFT OUTER JOIN marca c on a.idPessoa=c.Pessoa_juridica_Pessoa_idPessoa
+UNION
+SELECT a. * , b. * , c. *
+FROM pessoa_juridica b
+LEFT OUTER JOIN pessoa a on b.Pessoa_idPessoa=a.idPessoa
+LEFT OUTER JOIN marca c on b.Pessoa_idPessoa=c.Pessoa_juridica_Pessoa_idPessoa
+UNION
+SELECT a. * , b. * , c. *
+FROM marca c
+LEFT OUTER JOIN pessoa a on c.Pessoa_juridica_Pessoa_idPessoa = a.idPessoa
+LEFT OUTER JOIN pessoa_juridica b on c.Pessoa_juridica_Pessoa_idPessoa=b.Pessoa_idPessoa;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `testinho` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -678,4 +754,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-21 22:34:45
+-- Dump completed on 2020-11-22  1:03:06
