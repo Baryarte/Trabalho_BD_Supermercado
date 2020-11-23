@@ -24,6 +24,28 @@ USE `mydb`;
 --
 -- Dumping routines for database 'mydb'
 --
+/*!50003 DROP PROCEDURE IF EXISTS `CriarAtualizadoEm` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(76), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int)
+BEGIN
+
+insert into atualizado_em (Mercadoria_idMercadoria, Funcionario_Pessoa_fisica_Pessoa_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova)
+values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.Marca_idMarca = (select idMarca from marca where marca.nome = marca)), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova);
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `CriarBairro` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -32,7 +54,7 @@ USE `mydb`;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarBairro`(in nomeBairro text, in nomeCidade text, in nomeEstado text )
 BEGIN
@@ -40,9 +62,9 @@ BEGIN
 
 call CriarCidade(nomeCidade, nomeEstado);
 
-insert into bairro (nome, Cidade_idCidade)
-select * from ( select nomeBairro, (select idCidade from cidade where cidade.nome = nomeCidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = nomeEstado))) as tmp
-where not exists (select * from bairro where bairro.nome = nomeBairro and Cidade_idCidade =  (select idCidade from cidade where cidade.nome = nomeCidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = nomeEstado)));
+insert into bairro (nome, idCidade)
+select * from ( select nomeBairro, (select idCidade from cidade where cidade.nome = nomeCidade and cidade.idEstado = (select idEstado from estado where estado.nome = nomeEstado))) as tmp
+where not exists (select * from bairro where bairro.nome = nomeBairro and idCidade =  (select idCidade from cidade where cidade.nome = nomeCidade and cidade.idEstado = (select idEstado from estado where estado.nome = nomeEstado)));
 
 
 
@@ -67,7 +89,7 @@ BEGIN
 
 call CriarSetor(setor);
 
-insert into cargo(nome, salario, Setor_idSetor)
+insert into cargo(nome, salario, idSetor)
 values (nome, salario, (select idSetor from setor where setor.nome = setor));
 
 END ;;
@@ -84,7 +106,7 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarCidade`(in nomeCidade text, in nomeEstado text)
 BEGIN
@@ -93,9 +115,9 @@ BEGIN
 call CriarEstado(nomeEstado);
 
 
-insert into cidade (nome, Estado_idEstado)
+insert into cidade (nome, idEstado)
 select * from (select nomeCidade, (select idEstado from estado where estado.nome = nomeEstado)) as tmp
-where not exists (select * from cidade where cidade.nome = nomeCidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = nomeEstado));
+where not exists (select * from cidade where cidade.nome = nomeCidade and cidade.idEstado = (select idEstado from estado where estado.nome = nomeEstado));
 
 END ;;
 DELIMITER ;
@@ -118,8 +140,8 @@ BEGIN
 
 CALL `mydb`.`CriarPessoaFisica`( nome, cpf, sexo, escolaridade, data_nasc, fornecedor, estado_civil, email, identidade, cidade, estado);
 
-insert into cliente (Pessoa_fisica_Pessoa_idPessoa, Funcionario_Pessoa_fisica_Pessoa_idPessoa)
-values (last_insert_id(), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula));
+insert into cliente (idPessoa, Funcionario_idPessoa)
+values (last_insert_id(), (select idPessoa from funcionario where funcionario.matricula = matricula));
 
 END ;;
 DELIMITER ;
@@ -142,8 +164,8 @@ BEGIN
 
 CALL `mydb`.`CriarPessoaFisica`( nome, cpf, sexo, escolaridade, data_nasc, fornecedor, estado_civil, email, identidade, cidade, estado);
 
-insert into dependente (Pessoa_fisica_Pessoa_idPessoa, Funcionario_Pessoa_fisica_Pessoa_idPessoa )
-values (last_insert_id(), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula ));
+insert into dependente (idPessoa, Funcionario_idPessoa )
+values (last_insert_id(), (select idPessoa from funcionario where funcionario.matricula = matricula ));
 
 
 END ;;
@@ -182,7 +204,7 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarEndereco`(in rua text, numero text, cep text, complemento text, Tipo_endereco varchar(45), bairro text, cidade text, estado text)
 BEGIN
@@ -194,9 +216,9 @@ call CriarTipoEndereco(Tipo_endereco);
 call CriarBairro(bairro, cidade, estado);
 
 	
-insert into endereco (rua, numero, cep, complemento, Tipo_endereco_idTipo_endereco, Bairro_idBairro) 
-select * from ( select rua, numero, cep, complemento, (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco), (select idBairro from bairro where bairro.nome = bairro and bairro.Cidade_idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = estado) ))) as tmp
-where not exists (select * from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.Tipo_endereco_idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.Bairro_idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.Cidade_idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = estado) )));
+insert into endereco (rua, numero, cep, complemento, idTipo_endereco, idBairro) 
+select * from ( select rua, numero, cep, complemento, (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco), (select idBairro from bairro where bairro.nome = bairro and bairro.idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado) ))) as tmp
+where not exists (select * from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado) )));
 
 
 
@@ -272,6 +294,32 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarFormaPagamento` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarFormaPagamento`(nome varchar(45), tipo_pagamento varchar(45))
+BEGIN
+
+if not exists (select * from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento) then
+call CriarTipoPagamento(tipo_pagamento);
+end if;
+
+insert into forma_pagamento(nome, idTipo_pagamento )
+values (nome, (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento));
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `CriarFuncionario` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -299,14 +347,49 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarFuncionario`(in nome TEXT,
  in nome_mae varchar(200),
  in data_nasc_mae date,
  in cargo varchar(200),
- in matricula_criador int,
+ in setor varchar(200),
+ in salario float,
  in ativo bit(1))
 BEGIN
 
+if not exists (select * from cargo where cargo.nome = cargo) then
+call CriarCargo(cargo, salario, setor);
+end if;
+
 call CriarPessoaFisica(nome, cpf, sexo, escolaridade, data_nasc, fornecedor, estado_civil, email, identidade, cidade, estado);
 
-insert into funcionario (Pessoa_fisica_Pessoa_idPessoa, comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, Cargo_idCargo, Funcionario_Pessoa_fisica_Pessoa_idPessoa, ativo)
-values (last_insert_id(), comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, (select idCargo from cargo where cargo.nome = cargo), (select A.Pessoa_fisica_Pessoa_idPessoa from funcionario A where A.matricula = matricula_criador), ativo);
+if ((select count(*) from funcionario) = 0) then
+insert into funcionario (idPessoa, comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, idCargo, Funcionario_idPessoa, ativo)
+values (last_insert_id(), comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, (select idCargo from cargo where cargo.nome = cargo), null, ativo);
+
+else 
+insert into funcionario (idPessoa, comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, idCargo, Funcionario_idPessoa, ativo)
+values (last_insert_id(), comissao, nome_pai, data_nasc_pai, nome_mae, data_nasc_mae, (select idCargo from cargo where cargo.nome = cargo), (select A.idPessoa from funcionario A where A.idCargo = ( select idCargo from cargo where cargo.nome = 'Gerente')), ativo);
+
+end if;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarHistoricoDesconto` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarHistoricoDesconto`(descontoNome varchar(200), descontoData date, mercadoria varchar(200), marcaMercadoria varchar(75), tipo_mercadoria varchar(45), marca varchar(75) )
+BEGIN
+
+insert into historico_desconto(idDesconto, idMercadoria, idTipo_mercadoria, idMarca )
+values ((select idDesconto from desconto where desconto.nome = descontoNome and desconto.validade = descontoData ), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marcaMercadoria)), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
+
 
 END ;;
 DELIMITER ;
@@ -327,8 +410,77 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMarca`(nome varchar(75), desconto varchar(200), validade_desconto date, cnpj varchar(14))
 BEGIN
 
-insert into marca (nome, Desconto_idDesconto, Pessoa_juridica_Pessoa_idPessoa)
-values (nome, (select idDesconto from desconto where desconto.nome = desconto and desconto.validade = validade_desconto), (select Pessoa_idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj));
+insert into marca (nome, idDesconto, Pessoa_juridica_idPessoa)
+values (nome, (select idDesconto from desconto where desconto.nome = desconto and desconto.validade = validade_desconto), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj));
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarMercadoria` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMercadoria`(nome varchar (200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, matricula int, tipo_mercadoria varchar(45), marca varchar(75))
+BEGIN
+
+if not exists (select * from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria) then
+call CriarTipoMercadoria(tipo_mercadoria);
+end if;
+
+insert into mercadoria(nome, preco_venda, peso, quantidade, data_vencimento, volume, criado_em, preco_compra, Funcionario_idPessoa, idTipo_mercadoria, idMarca)
+values (nome, preco_venda, peso, quantidade, data_vencimento, volume, current_timestamp(), preco_compra, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarPagamento` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPagamento`(descontoNome varchar(200), descontoValidade date, forma_pagamento varchar(45), matricula int, cpf varchar(11), valor_total float , valor_recebido float, troco float, quantidadeParcelas int)
+BEGIN
+
+declare i int default 0;
+declare vencimento date default CURRENT_DATE ;
+
+
+insert into pagamento(idDesconto, idForma_pagamento, Funcionario_idPessoa, Cliente_idPessoa, valor_total, valor_recebido, troco, instante)
+values ((select idDesconto from desconto where desconto.nome = descontoNome and desconto.validade = descontoValidade), (select idForma_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento), (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), valor_total, valor_recebido, troco, current_timestamp());
+
+if (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = 'Parcelado') = (select idTipo_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento) then
+
+while i < quantidadeParcelas do
+
+insert into parcela (valor, paga, multa, data_vencimento, juros, data_pagamento, idPagamento)
+values ((select valor_total/quantidadeParcelas), 0, '0',  last_day(vencimento), '0', null, last_insert_id());
+
+set vencimento = date_add(vencimento, interval 1 month);
+set i = i + 1;
+
+end while;
+
+end if;
+
+
+
+
 
 END ;;
 DELIMITER ;
@@ -396,8 +548,8 @@ call CriarCidade(cidade, estado);
 
 call CriarPessoa(nome, email);
 
-insert into pessoa_fisica (Pessoa_idPessoa, cpf, Sexo_idSexo, Escolaridade_idEscolaridade, data_nasc, fornecedor, Estado_civil_idEstado_civil, identidade, Cidade_idCidade)
-values (last_insert_id(), cpf, (select idSexo from sexo where sexo.nome = sexo), (select idEscolaridade from escolaridade where escolaridade.nome = escolaridade), data_nasc , fornecedor, (select idEstado_civil from estado_civil where estado_civil.nome = estado_civil), identidade, (select idCidade from cidade where cidade.nome = cidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = estado))); 
+insert into pessoa_fisica (idPessoa, cpf, idSexo, idEscolaridade, data_nasc, fornecedor, idEstado_civil, identidade, idCidade)
+values (last_insert_id(), cpf, (select idSexo from sexo where sexo.nome = sexo), (select idEscolaridade from escolaridade where escolaridade.nome = escolaridade), data_nasc , fornecedor, (select idEstado_civil from estado_civil where estado_civil.nome = estado_civil), identidade, (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado))); 
 
 END ;;
 DELIMITER ;
@@ -420,8 +572,8 @@ BEGIN
 
 call CriarEndereco(rua, numero, cep, complemento, Tipo_endereco, bairro, cidade, estado);
 
-insert into pessoa_tem_endereco (Pessoa_idPessoa, Endereco_idEndereco)
-values ((select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idEndereco from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.Tipo_endereco_idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.Bairro_idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.Cidade_idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = estado))))); 
+insert into pessoa_tem_endereco (idPessoa, idEndereco)
+values ((select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idEndereco from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado))))); 
 
 END ;;
 DELIMITER ;
@@ -439,12 +591,12 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPessoaJuridica`(nome text, email varchar(200), cnpj text, fornecedor bit(1), matricula int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPessoaJuridica`(nome text, email varchar(200), cnpj text, fornecedor bit(1))
 BEGIN
 
 call CriarPessoa(nome, email);
-insert into pessoa_juridica (Pessoa_idPessoa, cnpj, fornecedor, Funcionario_Pessoa_fisica_Pessoa_idPessoa )
-values (last_insert_id(), cnpj, fornecedor, (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula));
+insert into pessoa_juridica (idPessoa, cnpj, fornecedor, Funcionario_idPessoa )
+values (last_insert_id(), cnpj, fornecedor,  (select idPessoa from funcionario where funcionario.idCargo = ( select idCargo from cargo where cargo.nome = 'Gerente')));
 
 END ;;
 DELIMITER ;
@@ -467,8 +619,8 @@ BEGIN
 
 call CriarEndereco(rua, numero, cep, complemento, Tipo_endereco, bairro, cidade, estado);
 
-insert into pessoa_tem_endereco (Pessoa_idPessoa, Endereco_idEndereco)
-values ((select Pessoa_idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), (select idEndereco from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.Tipo_endereco_idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.Bairro_idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.Cidade_idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.Estado_idEstado = (select idEstado from estado where estado.nome = estado))))); 
+insert into pessoa_tem_endereco (idPessoa, idEndereco)
+values ((select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), (select idEndereco from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado))))); 
 
 END ;;
 DELIMITER ;
@@ -534,14 +686,14 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTelefone`(in numero text, tipo_telefone  varchar(45))
 BEGIN
 
  call CriarTipoTelefone(tipo_telefone);
 
-insert into telefone (numero, Tipo_telefone_idTipo_Telefone)
+insert into telefone (numero, idTipo_Telefone)
 values (numero, (select idTipo_Telefone from tipo_telefone where tipo_telefone.nome = tipo_telefone));
 END ;;
 DELIMITER ;
@@ -566,8 +718,8 @@ if not exists (select * from telefone where telefone.numero = numero) then
 call CriarTelefone (numero, tipo_telefone);
 end if;
 
-insert into telefone_tem_pessoa (Telefone_idTelefone, Pessoa_idPessoa)
-values ((select idTelefone from telefone where telefone.numero = numero), (select Pessoa_idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf));
+insert into telefone_tem_pessoa (idTelefone, idPessoa)
+values ((select idTelefone from telefone where telefone.numero = numero), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf));
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -591,8 +743,8 @@ if not exists (select * from telefone where telefone.numero = numero) then
 call CriarTelefone (numero, tipo_telefone);
 end if;
 
-insert into telefone_tem_pessoa (Telefone_idTelefone, Pessoa_idPessoa)
-values ((select idTelefone from telefone where telefone.numero = numero), (select Pessoa_idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj));
+insert into telefone_tem_pessoa (idTelefone, idPessoa)
+values ((select idTelefone from telefone where telefone.numero = numero), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj));
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -616,6 +768,50 @@ if (not exists (select * from  tipo_endereco where tipo_endereco.nome = nome)) t
 insert into tipo_endereco (nome)
 values (nome);
 end if;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarTipoMercadoria` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTipoMercadoria`(nome varchar (45) )
+BEGIN
+
+insert into tipo_mercadoria(nome)
+values (nome);
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarTipoPagamento` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarTipoPagamento`(nome varchar(200))
+BEGIN
+
+insert into tipo_pagamento (nome)
+values (nome);
 
 END ;;
 DELIMITER ;
@@ -659,18 +855,50 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `PessoaPessoaFisicaDependente`()
 BEGIN
 SELECT a. * , b. * , c. *
 FROM pessoa a
-LEFT OUTER JOIN pessoa_fisica b on a.idPessoa=b.Pessoa_idPessoa
-LEFT OUTER JOIN dependente c on a.idPessoa=c.Pessoa_fisica_Pessoa_idPessoa
+LEFT OUTER JOIN pessoa_fisica b on a.idPessoa=b.idPessoa
+LEFT OUTER JOIN dependente c on a.idPessoa=c.idPessoa
 UNION
 SELECT a. * , b. * , c. *
 FROM pessoa_fisica b
-LEFT OUTER JOIN pessoa a on b.Pessoa_idPessoa=a.idPessoa
-LEFT OUTER JOIN dependente c on b.Pessoa_idPessoa=c.Pessoa_fisica_Pessoa_idPessoa
+LEFT OUTER JOIN pessoa a on b.idPessoa=a.idPessoa
+LEFT OUTER JOIN dependente c on b.idPessoa=c.idPessoa
 UNION
 SELECT a. * , b. * , c. *
 FROM dependente c
-LEFT OUTER JOIN pessoa a on c.Pessoa_fisica_Pessoa_idPessoa=a.idPessoa
-LEFT OUTER JOIN pessoa_fisica b on c.Pessoa_fisica_Pessoa_idPessoa=b.Pessoa_idPessoa;
+LEFT OUTER JOIN pessoa a on c.idPessoa=a.idPessoa
+LEFT OUTER JOIN pessoa_fisica b on c.idPessoa=b.idPessoa;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `PessoaPessoaFisicaFuncionario` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `PessoaPessoaFisicaFuncionario`()
+BEGIN
+SELECT a. * , b. * , c. *
+FROM pessoa a
+LEFT OUTER JOIN pessoa_fisica b on a.idPessoa=b.idPessoa
+LEFT OUTER JOIN funcionario c on a.idPessoa=c.idPessoa
+UNION
+SELECT a. * , b. * , c. *
+FROM pessoa_fisica b
+LEFT OUTER JOIN pessoa a on b.idPessoa=a.idPessoa
+LEFT OUTER JOIN funcionario c on b.idPessoa=c.idPessoa
+UNION
+SELECT a. * , b. * , c. *
+FROM funcionario c
+LEFT OUTER JOIN pessoa a on c.idPessoa=a.idPessoa
+LEFT OUTER JOIN pessoa_fisica b on c.idPessoa=b.idPessoa;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -691,18 +919,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `PessoaPessoaJuridicaMarca`()
 BEGIN
 SELECT a. * , b. * , c. *
 FROM pessoa a
-LEFT OUTER JOIN pessoa_juridica b on a.idPessoa=b.Pessoa_idPessoa
-LEFT OUTER JOIN marca c on a.idPessoa=c.Pessoa_juridica_Pessoa_idPessoa
+LEFT OUTER JOIN pessoa_juridica b on a.idPessoa=b.idPessoa
+LEFT OUTER JOIN marca c on a.idPessoa=c.Pessoa_juridica_idPessoa
 UNION
 SELECT a. * , b. * , c. *
 FROM pessoa_juridica b
-LEFT OUTER JOIN pessoa a on b.Pessoa_idPessoa=a.idPessoa
-LEFT OUTER JOIN marca c on b.Pessoa_idPessoa=c.Pessoa_juridica_Pessoa_idPessoa
+LEFT OUTER JOIN pessoa a on b.idPessoa=a.idPessoa
+LEFT OUTER JOIN marca c on b.idPessoa=c.Pessoa_juridica_idPessoa
 UNION
 SELECT a. * , b. * , c. *
 FROM marca c
-LEFT OUTER JOIN pessoa a on c.Pessoa_juridica_Pessoa_idPessoa = a.idPessoa
-LEFT OUTER JOIN pessoa_juridica b on c.Pessoa_juridica_Pessoa_idPessoa=b.Pessoa_idPessoa;
+LEFT OUTER JOIN pessoa a on c.Pessoa_juridica_idPessoa = a.idPessoa
+LEFT OUTER JOIN pessoa_juridica b on c.Pessoa_juridica_idPessoa=b.idPessoa;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -754,4 +982,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-22  1:03:06
+-- Dump completed on 2020-11-23  1:45:42
