@@ -223,6 +223,8 @@ CALL `mydb`.`CriarDesconto`('Dia das Mães', '0.30', '2020-05-14');
 CALL `mydb`.`CriarDesconto`('Black Friday', '0.40', '2020-11-30');
 CALL `mydb`.`CriarDesconto`('Natal', '0.25', '2020-12-30');
 CALL `mydb`.`CriarDesconto`('Desconto da semana', '0.15', '2020-11-28');
+CALL `mydb`.`CriarDesconto`('Desconto de aniversário', '0.20', '2020-12-23');
+CALL `mydb`.`CriarDesconto`('Desconto surpresa', '0.45', '2020-11-23');
 select * from desconto;
 
 CALL `mydb`.`CriarMarca`('Ypê', '01234567891012');
@@ -257,6 +259,8 @@ CALL `mydb`.`CriarHistoricoDesconto`('Black Friday', '2020-11-30', null , null ,
 CALL `mydb`.`CriarHistoricoDesconto`('Natal', '2020-12-30', null , null , null , 'Ypê');
 CALL `mydb`.`CriarHistoricoDesconto`('Dia das Mães', '2020-05-14', 'iPhone 11' , 'iPhone' , null , null);
 CALL `mydb`.`CriarHistoricoDesconto`('Dia dos Pais', '2020-08-12', 'Arroz' , 'Cristal' , null , null);
+CALL `mydb`.`CriarHistoricoDesconto`('Desconto de aniversário', '2020-12-23', null , null , null , 'Cristal');
+CALL `mydb`.`CriarHistoricoDesconto`('Desconto surpresa', '2020-11-23', 'Playstation 5' , 'Playstation' , null , null);
 select * from desconto;
 select * from historico_desconto;
 select * from tipo_mercadoria;
@@ -309,18 +313,47 @@ set @idMesmoPagamento = null;
 select @idMesmoPagamento;
 CALL `mydb`.`CriarPagamentoParcelaCompra`('Cheque', 'Parcelado', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '09568732456' , '199.99', 12, 'Arroz', 'Cristal', 10, @idMesmoPagamento);
 set @idMesmoPagamento = null;
--- CALL `mydb`.`CriarPagamentoParcelaCompra`('Dinheiro', 'À vista', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '78945685215' , '500.00', 5, 'Detergente', 'Ypê', 35, @idMesmoPagamento);
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Dinheiro', 'À vista', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '78945685215' , '500.00', 5, 'Detergente', 'Ypê', 35, @idMesmoPagamento);
+ 
  
 
- 
- select a.idDesconto, a.valor, a.validade
- from desconto a
- inner join (
-	
-) b on a.idDesconto = b.idDesconto and a.valor = b.valor;
 
- select idDesconto,max(valor) as valor from desconto group by idDesconto; 
-   
+select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where '36' in (select t2.idMercadoria) or '39' in (select t2.idMarca) or '37' in (select t2.idTipo_mercadoria) order by valor desc limit 1;
+
+select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where '36' in (select t2.idMercadoria) or '39' in (select t2.idMarca) or '37' in (select t2.idTipo_mercadoria)) a where (datediff(a.validade, current_date)>0) order by valor desc limit 1111;
+CALL `mydb`.`ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`('Arroz', 'Cristal');
+CALL `mydb`.`ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`('Playstation 5', 'Playstation');
+
+select * from mercadoria;
+select * from marca;
+select * from tipo_mercadoria;
+select * from desconto;
+select * from historico_desconto;
+select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto;
+ (select * from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto group by t2.idDesconto
+union 
+select * from desconto t1
+right join historico_desconto t2 on t1.idDesconto = t2.idDesconto group by t1.idDesconto); 
+
+(select * from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto 
+union
+select * from desconto t1
+right join historico_desconto t2 on t1.idDesconto = t2.idDesconto);
+
+select * from historico_desconto t1
+right join mercadoria t2 on t1.idMercadoria = t2.idMercadoria
+union
+select * from historico_desconto t1
+left join mercadoria t2 on t1.idMercadoria = t2.idMercadoria;
+
+
+select max(valor) as valor, idDesconto from desconto;
+select * from desconto;   
 
 (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'Arroz' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'Cristal')));
 (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'Cristal'));
@@ -335,9 +368,9 @@ select * from pessoa;
 select * from mercadoria;
 
 
-((select idDesconto from ((select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone')))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))))) T where (datediff(T.validade,current_date()) > 0 )) order by valor desc limit 1); 
+CALL `mydb`.`CriarReabastecimentoNovaMercadoria`('Sabão em pó', '15,19', '1,6kg', '400', , <{volume float}>, <{preco_compra float}>, <{matricula int}>, <{tipo_mercadoria int}>, <{marca varchar(75)}>, <{cpf varchar(11)}>, <{cnpj varchar(14)}>);
+
+
 
 
 

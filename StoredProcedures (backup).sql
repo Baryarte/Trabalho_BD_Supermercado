@@ -97,14 +97,14 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`(mercadoria varchar(200), marcaMercadoria varchar(75), tipo_mercadoria varchar(45), marca varchar(75))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`(mercadoria varchar(200), marca varchar(75))
 BEGIN
 
-(select idDesconto from ((select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = marca))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marcaMercadoria))))) T where (datediff(T.validade,current_date()) > 0 )) order by valor desc limit 1;
+select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date)>0) order by valor desc limit 1;
+
 
 END ;;
 DELIMITER ;
@@ -263,11 +263,11 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(76), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(76), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int, preco_compra_antigo float, preco_compra_novo float)
 BEGIN
 
 insert into atualizado_em (Mercadoria_idMercadoria, Funcionario_Pessoa_fisica_Pessoa_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova)
-values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.Marca_idMarca = (select idMarca from marca where marca.nome = marca)), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova);
+values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.Marca_idMarca = (select idMarca from marca where marca.nome = marca)), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo);
 
 END ;;
 DELIMITER ;
@@ -725,35 +725,40 @@ DELIMITER ;
 /*!50003 SET character_set_results = utf8mb4 */ ;
 /*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPagamentoParcelaCompra`(forma_pagamento varchar(45), tipo_pagamento varchar(200), matricula int, cpf varchar(11), valor_recebido float, quantidadeParcelas int, mercadoria varchar(200), marca varchar(75), quantidade int, inout idTimestamp timestamp)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPagamentoParcelaCompra`(forma_pagamento varchar(45), tipo_pagamento varchar(200), matricula int, cpf varchar(11), valor_recebido float, quantidadeParcelas int, mercadoria varchar(200), marca varchar(75), quantidade int, inout idMesmoPagamento int)
 BEGIN
 
 declare i int default 0;
 declare vencimento date default CURRENT_DATE ;
 declare pagamentoTimestamp timestamp;
 declare valor_total float default '0';
-declare idMaiorDesconto int default ((select idDesconto from ((select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = marca))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)))) union
-(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca))))) T where (datediff(T.validade,current_date()) > 0 )) order by valor desc limit 1); 
-
-set pagamentoTimestamp = idTimestamp;
-
-if (isnull(idTimestamp)) then
+declare idMaiorDesconto int default (select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date)>0) order by valor desc limit 1);
+declare valorMaiorDesconto float default (select valor from desconto where desconto.idDesconto = idMaiorDesconto);
 
 set pagamentoTimestamp = current_timestamp();
 
+if isnull(valorMaiorDesconto) then
+ set valorMaiorDesconto = 0;
+end if;
+
+if (isnull(idMesmoPagamento)) then
+
 insert into pagamento(idForma_pagamento, Funcionario_idPessoa, Cliente_idPessoa, valor_total, valor_recebido, troco, instante)
-values ((select idForma_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento and forma_pagamento.idTipo_pagamento = (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento)), (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), valor_total, valor_recebido, '0', pagamentoTimestamp);
+ values ((select idForma_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento and forma_pagamento.idTipo_pagamento = (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento)), (select  idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), valor_total, valor_recebido, (valor_recebido - valor_total), pagamentoTimestamp);
+
+set idMesmoPagamento = last_insert_id();
 
 if (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = 'Parcelado') = (select idTipo_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento and forma_pagamento.idTipo_pagamento = (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento)) then
+
 
 
 while i < quantidadeParcelas do
 
 insert into parcela (valor, paga, multa, data_vencimento, juros, data_pagamento, idPagamento, instante)
-values ((select valor_total/quantidadeParcelas), 0, '0',  last_day(vencimento), '0', null, last_insert_id(), pagamentoTimestamp);
+values ((select valor_total/quantidadeParcelas), 0, '0',  last_day(vencimento), '0', null, idMesmoPagamento, pagamentoTimestamp);
 
 set vencimento = date_add(vencimento, interval 1 month);
 set i = i + 1;
@@ -767,15 +772,27 @@ end if;
 
 
 insert into compra (idPagamento, idMercadoria, idDesconto, quantidade, instante)
-values ((select idPagamento from pagamento where pagamento.instante = pagamentoTimestamp), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), idMaiorDesconto ,quantidade, pagamentoTimestamp);
+values ((select idPagamento from pagamento where pagamento.idPagamento = idMesmoPagamento), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), idMaiorDesconto ,quantidade, pagamentoTimestamp);
+
+update mercadoria
+set mercadoria.quantidade = (select mercadoria.quantidade) - quantidade
+where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+
+set valor_total = (select valor_total from pagamento where pagamento.idPagamento = idMesmoPagamento) + (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) ) * (1 - valorMaiorDesconto) * quantidade;
 
 update pagamento
-set valor_total = (select valor_total from pagamento where pagemento.instante = @idTimestamp) + (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.marca = marca) * (1 - (select valor from desconto where desconto.idDesconto = idMaiorDesconto)) * quantidade, troco = valor_recebido - valor_total
-where instante = pagamentoTimestamp;
+set valor_total = valor_total, troco = troco - (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) ) * (1 - valorMaiorDesconto) * quantidade
+where idPagamento = idMesmoPagamento;
+
+if (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = 'Parcelado') = (select idTipo_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento and forma_pagamento.idTipo_pagamento = (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento)) then
 
 update parcela
 set valor = valor_total/quantidadeParcelas
-where instante = pagamentoTimestamp;
+where idPagamento = idMesmoPagamento;
+
+end if;
+
+
 
 END ;;
 DELIMITER ;
@@ -917,6 +934,61 @@ call CriarEndereco(rua, numero, cep, complemento, Tipo_endereco, bairro, cidade,
 insert into pessoa_tem_endereco (idPessoa, idEndereco)
 values ((select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), (select idEndereco from endereco where endereco.rua = rua and endereco.numero = numero and endereco.cep = cep and endereco.complemento = complemento and endereco.idTipo_endereco = (select idTipo_endereco from tipo_endereco where tipo_endereco.nome = Tipo_endereco) and endereco.idBairro =  (select idBairro from bairro where bairro.nome = bairro and bairro.idCidade = (select idCidade from cidade where cidade.nome = cidade and cidade.idEstado = (select idEstado from estado where estado.nome = estado))))); 
 
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarReabastecimento` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarReabastecimento`(mercadoria varchar(200), marca varchar(75), matricula int, cpf varchar(11), cnpj varchar(14), quantidade int)
+BEGIN
+	
+    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade)
+    values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade);
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CriarReabastecimentoNovaMercadoria` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarReabastecimentoNovaMercadoria`(mercadoria varchar(200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, matricula int, tipo_mercadoria int, marca varchar(75), cpf varchar(11), cnpj varchar(14))
+BEGIN
+	
+    if not exists (select * from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome)) then
+    CALL `mydb`.`CriarMercadoria`(mercadoria, preco_venda, peso, quantidade, data_vencimento,  volume, preco_compra, matricula, tipo_mercadoria, marca);
+    else 
+    
+    update mercadoria
+    set mercadoria.quantidade = mercadoria.quantidade + quantidade
+    where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+    
+	end if;
+    
+    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade)
+    values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade);
+
+	
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -1213,4 +1285,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-23 17:30:39
+-- Dump completed on 2020-11-24 14:12:11
