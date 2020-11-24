@@ -13,6 +13,12 @@
 -- VALUES (last_insert_id(), 01455588822, (select idSexo from sexo where descricao = 'Feminino'),  'Ensino médio completo', '1997-12-09', 0 );
 
 select * from funcionario;
+delete from compra;
+delete from parcela;
+delete from pagamento;
+delete from forma_pagamento;
+delete from tipo_pagamento;
+delete from historico_desconto;
 delete from mercadoria;
 delete from tipo_mercadoria;
 delete from marca;
@@ -219,12 +225,12 @@ CALL `mydb`.`CriarDesconto`('Natal', '0.25', '2020-12-30');
 CALL `mydb`.`CriarDesconto`('Desconto da semana', '0.15', '2020-11-28');
 select * from desconto;
 
-CALL `mydb`.`CriarMarca`('Ypê', 'Desconto da semana', '2020-11-28', '01234567891012');
-CALL `mydb`.`CriarMarca`('Playstation', 'Black Friday', '2020-11-30', '01234567891013');
-CALL `mydb`.`CriarMarca`('Xbox', 'Black Friday', '2020-11-30', '01234567891014');
-CALL `mydb`.`CriarMarca`('Cristal', 'Black Friday', '2020-11-30', '01234567891011');
-CALL `mydb`.`CriarMarca`('iPhone', 'Black Friday', '2020-11-30', '01234567891015');
-CALL `mydb`.`PessoaPessoaJuridicaMarca`();
+CALL `mydb`.`CriarMarca`('Ypê', '01234567891012');
+CALL `mydb`.`CriarMarca`('Playstation', '01234567891013');
+CALL `mydb`.`CriarMarca`('Xbox', '01234567891014');
+CALL `mydb`.`CriarMarca`('Cristal', '01234567891011');
+CALL `mydb`.`CriarMarca`('iPhone', '01234567891015');
+CALL `mydb`.`ConsultaPessoaPessoaJuridicaMarca`();
 
 CALL `mydb`.`CriarTipoMercadoria`('Limpeza');
 CALL `mydb`.`CriarTipoMercadoria`('Grão');
@@ -238,7 +244,7 @@ CALL `mydb`.`CriarMercadoria`('iPhone 11', '4350.99', '194g', '100', '3000-01-01
 CALL `mydb`.`CriarMercadoria`('Playstation 5', '5599.99', '5Kg', '50', '3000-01-01' , null, '3559.99', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Playstation');
 CALL `mydb`.`CriarMercadoria`('Xbox Series X', '4999.90', '4.5Kg', '50', '3000-01-01' , null, '2999.90', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Xbox');
 CALL `mydb`.`CriarMercadoria`('Detergente', '1.65', null , '700', '2022-03-22' , '500ml', '0.59', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Limpeza', 'Ypê');
-CALL `mydb`.`PessoaPessoaFisicaFuncionario`();
+CALL `mydb`.`ConsultaPessoaPessoaFisicaFuncionario`();
 select * from mercadoria;
 select * from funcionario;
 select * from pessoa_fisica;
@@ -272,14 +278,75 @@ select * from forma_pagamento;
 select nome from tipo_pagamento where tipo_pagamento.nome = 'Parcelado';
 (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = 'Parcelado');
 (select idTipo_pagamento from forma_pagamento where forma_pagamento.nome = 'Cartão - crédito');
-
+select greatest(1,2,3);
 select LAST_DAY(CURRENT_DATE);
 
-CALL `mydb`.`CriarPagamento`('Black Friday', '2020-11-30', 'Parcelado', '12345678915', '32143267351', ''<{valor_total float}>, <{valor_recebido float}>, <{troco float}>, <{quantidadeParcelas int}>);
+
+(select valor from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))));
+(select valor from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = 'Videogame')));
+CALL `mydb`.`ConsultaTipoDaMercadoria`('Detergente' , 'Ypê');
+
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'Ypê'))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = 'Videogame'))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone')))) order by  valor desc;
+
+
+(select idDesconto from ((select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'Ypê'))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = 'Videogame'))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))))) T where (datediff(T.validade,current_date()) > 0 )) order by valor desc limit 1;
+
+
+select null into @idMesmoPagamento;
+select @idMesmoPagamento;
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Cheque', 'Parcelado', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '17584652319', '4350.99', 3, 'iPhone 11', 'iPhone', 1, @idMesmoPagamento);
+select @idMesmoPagamento;
+set @idMesmoPagamento = null;
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Dinheiro', 'À vista', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), '17584652319', '13288.25', 0, 'Playstation 5', 'Playstation', 2, @idMesmoPagamento);
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Cartão - crédito', 'Parcelado', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), '17584652319', '13288.25', 0, 'Xbox Series X', 'Xbox', 1, @idMesmoPagamento);
+set @idMesmoPagamento = null;
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Cartão - débito', 'À vista', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), '10987654321', '7000.00', 0, 'Playstation 5', 'Playstation', 1, @idMesmoPagamento);
+set @idMesmoPagamento = null;
+select @idMesmoPagamento;
+CALL `mydb`.`CriarPagamentoParcelaCompra`('Cheque', 'Parcelado', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '09568732456' , '199.99', 12, 'Arroz', 'Cristal', 10, @idMesmoPagamento);
+set @idMesmoPagamento = null;
+-- CALL `mydb`.`CriarPagamentoParcelaCompra`('Dinheiro', 'À vista', (select matricula from funcionario where funcionario.idPessoa = ( select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), '78945685215' , '500.00', 5, 'Detergente', 'Ypê', 35, @idMesmoPagamento);
+ 
+
+ 
+ select a.idDesconto, a.valor, a.validade
+ from desconto a
+ inner join (
+	
+) b on a.idDesconto = b.idDesconto and a.valor = b.valor;
+
+ select idDesconto,max(valor) as valor from desconto group by idDesconto; 
+   
+
+(select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'Arroz' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'Cristal')));
+(select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'Cristal'));
+ (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'Arroz' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'Cristal')));
+ (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from mercadoria where mercadoria.nome = 'Arroz' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'Cristal')));
+select * from forma_pagamento;
+select * from tipo_pagamento;
+select * from pagamento;
+select * from parcela;
+select * from compra;
+select * from pessoa;
+select * from mercadoria;
+
+
+((select idDesconto from ((select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idTipo_mercadoria = (select idTipo_mercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone')))) union
+(select idDesconto, valor, validade from desconto where desconto.idDesconto = (select idDesconto from historico_desconto where historico_desconto.idMercadoria = (select idMercadoria from mercadoria where mercadoria.nome = 'iPhone 11' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'iPhone'))))) T where (datediff(T.validade,current_date()) > 0 )) order by valor desc limit 1); 
+
+
+
+
+
+
 
 
 -- parcela, pagamento, compra, reabastecimento 
-
 
 
 
