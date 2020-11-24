@@ -241,7 +241,7 @@ CALL `mydb`.`CriarTipoMercadoria`('Videogame');
 CALL `mydb`.`CriarTipoMercadoria`('Biscoito');
 select * from tipo_mercadoria;
 
-CALL `mydb`.`CriarMercadoria`('Arroz', '19.99', '5kg', '500', '2021-01-22', null, '15.40', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')), 'Grão', 'Cristal');
+CALL `mydb`.`CriarMercadoria`('Arroz', '19.99', '5kg', '500', '2021-01-22', null, '15.40', '34980JT4038', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')), 'Grão', 'Cristal');
 CALL `mydb`.`CriarMercadoria`('iPhone 11', '4350.99', '194g', '100', '3000-01-01' , null, '2850.45', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Celular', 'iPhone');
 CALL `mydb`.`CriarMercadoria`('Playstation 5', '5599.99', '5Kg', '50', '3000-01-01' , null, '3559.99', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Playstation');
 CALL `mydb`.`CriarMercadoria`('Xbox Series X', '4999.90', '4.5Kg', '50', '3000-01-01' , null, '2999.90', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Xbox');

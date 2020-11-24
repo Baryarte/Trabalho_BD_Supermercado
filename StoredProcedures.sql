@@ -266,6 +266,9 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(75), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int, preco_compra_antigo float, preco_compra_novo float)
 BEGIN
 
+insert into atualizado_em (Mercadoria_idMercadoria, Funcionario_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo)
+values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.Marca_idMarca = (select idMarca from marca where marca.nome = marca)), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo);
+
 
 END ;;
 DELIMITER ;
@@ -656,7 +659,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMercadoria`(nome varchar (200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, matricula int, tipo_mercadoria varchar(45), marca varchar(75))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMercadoria`(nome varchar (200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, matricula int, lote varchar(100), data_fabricacaoo date, tipo_mercadoria varchar(45), marca varchar(75))
 BEGIN
 
 if not exists (select * from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria) then
@@ -664,7 +667,7 @@ call CriarTipoMercadoria(tipo_mercadoria);
 end if;
 
 insert into mercadoria(nome, preco_venda, peso, quantidade, data_vencimento, volume, criado_em, preco_compra, Funcionario_idPessoa, idTipo_mercadoria, idMarca)
-values (nome, preco_venda, peso, quantidade, data_vencimento, volume, current_timestamp(), preco_compra, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
+values (nome, preco_venda, peso, quantidade, data_vencimento, volume, current_timestamp(), preco_compra, lote, data_fabricacao, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -1956,4 +1959,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-24 14:36:38
+-- Dump completed on 2020-11-24 14:43:51
