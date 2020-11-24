@@ -370,7 +370,7 @@ select * from mercadoria;
 
 CALL `mydb`.`CriarAtualizadoEm`('Arroz', 'Cristal', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), <{mercadoria varchar(200)}>, <{marca varchar(75)}>, <{matricula int}>, <{preco_antigo float}>, <{preco_novo float}>, <{quantidade_antiga int}>, <{quantidade_nova int}>, <{preco_compra_antigo float}>, <{preco_compra_novo float}>);
 
-CALL `mydb`.`CriarReabastecimento`('Arroz', '23.0', '5kg', '10', '2021-05-25', null, '18', 'FF23DFRET',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Grão', 'Cristal');
+CALL `mydb`.`CriarReabastecimento`('Arroz', '26.0', '5kg', '10', '2021-05-25', null, '18', 'FF23DFRET',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Grão', 'Cristal');
 select * from atualizado_em;
 CALL `mydb`.`CriarReabastecimento`(<{mercadoria varchar(200)}>, <{preco_venda float}>, <{peso varchar(10)}>, <{quantidade int}>, <{data_vencimento date}>, <{volume varchar(10)}>, <{preco_compra float}>, <{lote varchar(100)}>, <{data_fabricacao date}>, <{matricula int}>, <{tipo_mercadoria varchar(200)}>, <{marca varchar(75)}>);
 
