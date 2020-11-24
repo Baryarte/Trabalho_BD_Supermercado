@@ -103,7 +103,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMaiorDescontoMercadoriaTipo
 BEGIN
 
 select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
-left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date)>0) order by valor desc limit 1;
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date) >= 0) order by valor desc limit 1;
 
 
 END ;;
@@ -263,11 +263,19 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(75), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int, preco_compra_antigo float, preco_compra_novo float)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(75), lote varchar(100), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int, preco_compra_antigo float, preco_compra_novo float)
 BEGIN
 
-insert into atualizado_em (Mercadoria_idMercadoria, Funcionario_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo)
-values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.Marca_idMarca = (select idMarca from marca where marca.nome = marca)), (select Pessoa_fisica_Pessoa_idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo);
+declare elote text;
+declare idMerc int;
+declare idMa int;
+
+select mercadoria.idMercadoria, mercadoria.idMarca, mercadoria.lote into idMerc, idMa, elote from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
+
+insert into atualizado_em (idMercadoria, Funcionario_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo)
+values (idMerc, (select idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo);
+
+
 
 
 END ;;
@@ -659,14 +667,14 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMercadoria`(nome varchar (200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, matricula int, lote varchar(100), data_fabricacaoo date, tipo_mercadoria varchar(45), marca varchar(75))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarMercadoria`(nome varchar (200), preco_venda float, peso varchar(10), quantidade int, data_vencimento date, volume varchar(10), preco_compra float, lote varchar(100), data_fabricacao date, matricula int, tipo_mercadoria varchar(45), marca varchar(75))
 BEGIN
 
 if not exists (select * from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria) then
 call CriarTipoMercadoria(tipo_mercadoria);
 end if;
 
-insert into mercadoria(nome, preco_venda, peso, quantidade, data_vencimento, volume, criado_em, preco_compra, Funcionario_idPessoa, idTipo_mercadoria, idMarca)
+insert into mercadoria(nome, preco_venda, peso, quantidade, data_vencimento, volume, criado_em, preco_compra, lote, data_fabricacao, Funcionario_idPessoa, idTipo_mercadoria, idMarca)
 values (nome, preco_venda, peso, quantidade, data_vencimento, volume, current_timestamp(), preco_compra, lote, data_fabricacao, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
 END ;;
 DELIMITER ;
@@ -951,11 +959,51 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarReabastecimento`(mercadoria varchar(200), marca varchar(75), matricula int, cpf varchar(11), cnpj varchar(14), quantidade int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarReabastecimento`(mercadoria varchar(200) ,
+preco_venda float ,
+peso varchar(10) ,
+quantidade int ,
+data_vencimento date ,
+volume varchar(10) ,
+preco_compra float ,
+lote varchar(100) ,
+data_fabricacao date ,
+matricula int ,
+tipo_mercadoria varchar(200) ,
+marca varchar(75))
 BEGIN
-	
+	declare id int;
+	declare pva float;
+    declare qua text;
+    declare pca float;
+    
+    
+    
+    if not exists (select * from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) then
+    
+    
+    CALL `mydb`.`CriarMercadoria`(mercadoria, preco_venda, peso, quantidade, data_vencimento, volume, preco_compra, lote, data_fabricacao, matricula, tipo_mercadoria, marca);
+    
+	select idMercadoria, preco_venda, quantidade, preco_compra into id, pva, qua, pca from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
+    
+    else
+    
+    select idMercadoria, preco_venda, quantidade, preco_compra into id, pva, qua, pca from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
+    
+   -- CALL `mydb`.`CriarAtualizadoEm`(mercadoria, marca, matricula, (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), preco_venda, (select quantidade from mercadoria where ), <{quantidade_nova int}>, <{preco_compra_antigo float}>, <{preco_compra_novo float}>);
+    CALL `mydb`.`CriarAtualizadoEm`(mercadoria, marca, lote, matricula, pva, preco_venda, qua, quantidade , pca, preco_compra);
+
+    
+    update mercadoria
+    set mercadoria.preco_venda = preco_venda, mercadoria.quantidade = mercadoria.quantidade + quantidade
+    where mercadoria.idMercadoria = id;
+    
+    
+    end if;
+    
+    
     insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade)
-    values ((select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade);
+    values (id, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade);
 
 END ;;
 DELIMITER ;
@@ -1959,4 +2007,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-24 14:43:51
+-- Dump completed on 2020-11-24 16:23:49

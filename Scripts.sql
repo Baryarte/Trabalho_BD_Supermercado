@@ -241,11 +241,11 @@ CALL `mydb`.`CriarTipoMercadoria`('Videogame');
 CALL `mydb`.`CriarTipoMercadoria`('Biscoito');
 select * from tipo_mercadoria;
 
-CALL `mydb`.`CriarMercadoria`('Arroz', '19.99', '5kg', '500', '2021-01-22', null, '15.40', '34980JT4038', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')), 'Grão', 'Cristal');
-CALL `mydb`.`CriarMercadoria`('iPhone 11', '4350.99', '194g', '100', '3000-01-01' , null, '2850.45', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Celular', 'iPhone');
-CALL `mydb`.`CriarMercadoria`('Playstation 5', '5599.99', '5Kg', '50', '3000-01-01' , null, '3559.99', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Playstation');
-CALL `mydb`.`CriarMercadoria`('Xbox Series X', '4999.90', '4.5Kg', '50', '3000-01-01' , null, '2999.90', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Xbox');
-CALL `mydb`.`CriarMercadoria`('Detergente', '1.65', null , '700', '2022-03-22' , '500ml', '0.59', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Limpeza', 'Ypê');
+CALL `mydb`.`CriarMercadoria`('Arroz', '19.99', '5kg', '500', '2021-01-22', null, '15.40', '34980JT4038', current_date, (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678911')), 'Grão', 'Cristal');
+CALL `mydb`.`CriarMercadoria`('iPhone 11', '4350.99', '194g', '100', '3000-01-01' , null, '2850.45', 'F30K9F30', current_date, (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Celular', 'iPhone');
+CALL `mydb`.`CriarMercadoria`('Playstation 5', '5599.99', '5Kg', '50', '3000-01-01' , null, '3559.99', 'FK039KF9', current_date, (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Playstation');
+CALL `mydb`.`CriarMercadoria`('Xbox Series X', '4999.90', '4.5Kg', '50', '3000-01-01' , null, '2999.90', 'FK39053U', current_date, (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678915')), 'Videogame', 'Xbox');
+CALL `mydb`.`CriarMercadoria`('Detergente', '1.65', null , '700', '2022-03-22' , '500ml', '0.59', 'L403L42',current_date, (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910')), 'Limpeza', 'Ypê');
 CALL `mydb`.`ConsultaPessoaPessoaFisicaFuncionario`();
 select * from mercadoria;
 select * from funcionario;
@@ -368,11 +368,17 @@ select * from pessoa;
 select * from mercadoria;
 
 
-CALL `mydb`.`CriarReabastecimentoNovaMercadoria`('Sabão em pó', '15,19', '1,6kg', '400', , <{volume float}>, <{preco_compra float}>, <{matricula int}>, <{tipo_mercadoria int}>, <{marca varchar(75)}>, <{cpf varchar(11)}>, <{cnpj varchar(14)}>);
+CALL `mydb`.`CriarAtualizadoEm`('Arroz', 'Cristal', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), <{mercadoria varchar(200)}>, <{marca varchar(75)}>, <{matricula int}>, <{preco_antigo float}>, <{preco_novo float}>, <{quantidade_antiga int}>, <{quantidade_nova int}>, <{preco_compra_antigo float}>, <{preco_compra_novo float}>);
+
+CALL `mydb`.`CriarReabastecimento`('Arroz', '23.0', '5kg', '10', '2021-05-25', null, '18', 'FF23DFRET',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Grão', 'Cristal');
+select * from atualizado_em;
+CALL `mydb`.`CriarReabastecimento`(<{mercadoria varchar(200)}>, <{preco_venda float}>, <{peso varchar(10)}>, <{quantidade int}>, <{data_vencimento date}>, <{volume varchar(10)}>, <{preco_compra float}>, <{lote varchar(100)}>, <{data_fabricacao date}>, <{matricula int}>, <{tipo_mercadoria varchar(200)}>, <{marca varchar(75)}>);
 
 
+    select idMercadoria, preco_venda, quantidade, preco_compra  from mercadoria where mercadoria.nome = 'Arroz' and mercadoria.idMarca = (select idMarca from marca where marca.nome = 'Cristal') and mercadoria.lote = 'FF23DFRET';
 
 
+Error Code: 1452. Cannot add or update a child row: a foreign key constraint fails (`mydb`.`atualizado_em`, CONSTRAINT `fk_Atualizado_em_Mercadoria1` FOREIGN KEY (`idMercadoria`) REFERENCES `mercadoria` (`idMercadoria`) ON DELETE CASCADE ON UPDATE CASCADE)
 
 
 
