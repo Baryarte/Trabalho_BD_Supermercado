@@ -1044,8 +1044,8 @@ BEGIN
     end if;
     
     
-    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade, instante)
-    values (id, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade, current_timestamp());
+    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade, instante, valor_total)
+    values (id, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade, current_timestamp(), (preco_compra * quantidade) );
 
 END ;;
 DELIMITER ;
@@ -2120,3 +2120,4 @@ DELIMITER ;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2020-11-24 17:50:31
+-- Dump completed on 2020-11-24 17:53:03

@@ -349,9 +349,11 @@ select * from pessoa;
 
 
 
-CALL `mydb`.`CriarReabastecimento`('Playstation', '7000.0', '5kg', '10', '3000-05-25', null, '5000', 'FK039KF9',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Videogame', 'Playstation', null, '01234567891013');
+CALL `mydb`.`CriarReabastecimento`('Playstation 5', '7000.0', '5kg', '10', '3000-05-25', null, '5000', 'FK039KF9',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Videogame', 'Playstation', null, '01234567891013');
+CALL `mydb`.`CriarReabastecimento`('Detergente', '7000.0', '5kg', '10', '3000-05-25', null, '5000', 'L403L42',  '2020-11-21', (select matricula from funcionario where funcionario.idPessoa = (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = '12345678910' )), 'Limpeza', 'Ypê', null, '01234567891013');
 select * from atualizado_em;
 select * from mercadoria;
+select * from reabastecimento;
 
 
 
