@@ -99,11 +99,11 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`(mercadoria varchar(200), marca varchar(75))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca`(mercadoria varchar(200), marca varchar(75), lote varchar(100))
 BEGIN
 
 select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
-left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date) >= 0) order by valor desc limit 1;
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date) >= 0) order by valor desc limit 1;
 
 
 END ;;
@@ -263,17 +263,18 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(75), lote varchar(100), matricula int, preco_antigo float, preco_novo float, quantidade_antiga int, quantidade_nova int, preco_compra_antigo float, preco_compra_novo float)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarAtualizadoEm`(mercadoria varchar(200), marca varchar(75), lote varchar(100), matricula int, preco_novo float, quantidade_nova int, preco_compra_novo float)
 BEGIN
 
-declare elote text;
+declare pca float;
+declare pva float;
 declare idMerc int;
-declare idMa int;
+declare qua int;
 
-select mercadoria.idMercadoria, mercadoria.idMarca, mercadoria.lote into idMerc, idMa, elote from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
+select mercadoria.idMercadoria, mercadoria.quantidade, mercadoria.preco_venda, mercadoria.preco_compra into idMerc, qua, pva, pca from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
 
 insert into atualizado_em (idMercadoria, Funcionario_idPessoa, instante, preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo)
-values (idMerc, (select idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), preco_antigo, preco_novo, quantidade_antiga, quantidade_nova, preco_compra_antigo, preco_compra_novo);
+values (idMerc, (select idPessoa from funcionario where funcionario.matricula = matricula), current_timestamp(), pva, preco_novo, quantidade_antiga, quantidade_nova, pca, preco_compra_novo);
 
 
 
@@ -622,11 +623,11 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarHistoricoDesconto`(descontoNome varchar(200), descontoData date, mercadoria varchar(200), marcaMercadoria varchar(75), tipo_mercadoria varchar(45), marca varchar(75) )
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarHistoricoDesconto`(descontoNome varchar(200), descontoData date, mercadoria varchar(200), marcaMercadoria varchar(75), lote varchar(100), tipo_mercadoria varchar(45), marca varchar(75)  )
 BEGIN
 
 insert into historico_desconto(idDesconto, idMercadoria, idTipo_mercadoria, idMarca )
-values ((select idDesconto from desconto where desconto.nome = descontoNome and desconto.validade = descontoData ), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marcaMercadoria)), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
+values ((select idDesconto from desconto where desconto.nome = descontoNome and desconto.validade = descontoData ), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marcaMercadoria) and mercadoria.lote = lote), (select idTipo_mercadoria from tipo_mercadoria where tipo_mercadoria.nome = tipo_mercadoria), (select idMarca from marca where marca.nome = marca));
 
 
 END ;;
@@ -736,7 +737,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPagamentoParcelaCompra`(forma_pagamento varchar(45), tipo_pagamento varchar(200), matricula int, cpf varchar(11), valor_recebido float, quantidadeParcelas int, mercadoria varchar(200), marca varchar(75), quantidade int, inout idMesmoPagamento int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CriarPagamentoParcelaCompra`(forma_pagamento varchar(45), tipo_pagamento varchar(200), matricula int, cpf varchar(11), valor_recebido float, quantidadeParcelas int, mercadoria varchar(200), marca varchar(75), lote varchar(100), quantidade int, inout idMesmoPagamento int)
 BEGIN
 
 declare i int default 0;
@@ -744,7 +745,7 @@ declare vencimento date default CURRENT_DATE ;
 declare pagamentoTimestamp timestamp;
 declare valor_total float default '0';
 declare idMaiorDesconto int default (select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, t2.idMercadoria, t2.idTipo_mercadoria, t2.idMarca from desconto t1
-left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date)>0) order by valor desc limit 1);
+left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date)>0) order by valor desc limit 1);
 declare valorMaiorDesconto float default (select valor from desconto where desconto.idDesconto = idMaiorDesconto);
 
 set pagamentoTimestamp = current_timestamp();
@@ -781,16 +782,16 @@ end if;
 
 
 insert into compra (idPagamento, idMercadoria, idDesconto, quantidade, instante)
-values ((select idPagamento from pagamento where pagamento.idPagamento = idMesmoPagamento), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), idMaiorDesconto ,quantidade, pagamentoTimestamp);
+values ((select idPagamento from pagamento where pagamento.idPagamento = idMesmoPagamento), (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote), idMaiorDesconto ,quantidade, pagamentoTimestamp);
 
 update mercadoria
 set mercadoria.quantidade = (select mercadoria.quantidade) - quantidade
-where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
 
-set valor_total = (select valor_total from pagamento where pagamento.idPagamento = idMesmoPagamento) + (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) ) * (1 - valorMaiorDesconto) * quantidade;
+set valor_total = (select valor_total from pagamento where pagamento.idPagamento = idMesmoPagamento) + (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) * (1 - valorMaiorDesconto) * quantidade;
 
 update pagamento
-set valor_total = valor_total, troco = troco - (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) ) * (1 - valorMaiorDesconto) * quantidade
+set valor_total = valor_total, troco = troco - (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote ) * (1 - valorMaiorDesconto) * quantidade
 where idPagamento = idMesmoPagamento;
 
 if (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = 'Parcelado') = (select idTipo_pagamento from forma_pagamento where forma_pagamento.nome = forma_pagamento and forma_pagamento.idTipo_pagamento = (select idTipo_pagamento from tipo_pagamento where tipo_pagamento.nome = tipo_pagamento)) then
@@ -970,12 +971,15 @@ lote varchar(100) ,
 data_fabricacao date ,
 matricula int ,
 tipo_mercadoria varchar(200) ,
-marca varchar(75))
+marca varchar(75),
+cpf varchar(11),
+cnpj varchar(14))
 BEGIN
 	declare id int;
 	declare pva float;
     declare qua text;
     declare pca float;
+    
     
     
     
@@ -991,7 +995,7 @@ BEGIN
     select idMercadoria, preco_venda, quantidade, preco_compra into id, pva, qua, pca from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote;
     
    -- CALL `mydb`.`CriarAtualizadoEm`(mercadoria, marca, matricula, (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), preco_venda, (select quantidade from mercadoria where ), <{quantidade_nova int}>, <{preco_compra_antigo float}>, <{preco_compra_novo float}>);
-    CALL `mydb`.`CriarAtualizadoEm`(mercadoria, marca, lote, matricula, pva, preco_venda, qua, quantidade , pca, preco_compra);
+    CALL `mydb`.`CriarAtualizadoEm`(mercadoria, marca, lote, matricula, preco_venda, quantidade , preco_compra);
 
     
     update mercadoria
@@ -1002,8 +1006,8 @@ BEGIN
     end if;
     
     
-    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade)
-    values (id, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade);
+    insert into reabastecimento (idMercadoria, Funcionario_idPessoa, Pessoa_fisica_idPessoa, Pessoa_juridica_idPessoa, quantidade, instante)
+    values (id, (select idPessoa from funcionario where funcionario.matricula = matricula), (select idPessoa from pessoa_fisica where pessoa_fisica.cpf = cpf), (select idPessoa from pessoa_juridica where pessoa_juridica.cnpj = cnpj), quantidade, current_timestamp());
 
 END ;;
 DELIMITER ;
@@ -1677,76 +1681,6 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPeso` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPeso`(in mercadoria varchar(200), marca varchar(75), peso varchar(10))
-BEGIN
-
-update mercadoria
-set peso = peso
-where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and (datediff(mercadoria.data_fabricacao,current_timestamp()) > 0);
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPrecoCompra` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPrecoCompra`(in marca varchar(75), mercadoria varchar(200), lote varchar(100), preco_antigo float, preco_novo float, matricula int)
-BEGIN
-
- call CriarAtualizadoEm(mercadoria,marca,matricula,(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote= lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),preco_antigo, preco_novo) ;
- 
- update mercadoria
- set mercadoria.preco_compra = preco_novo
- where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPrecoVenda` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPrecoVenda`(in marca varchar(75), mercadoria varchar(200), lote varchar(100), preco_antigo float, preco_novo float, matricula int)
-BEGIN
-
- call CriarAtualizadoEm(mercadoria,marca,matricula,preco_antigo, preco_novo, (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote= lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
- 
- update mercadoria
- set mercadoria.preco_venda = preco_novo
- where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaQuantidade` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -1757,14 +1691,14 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaQuantidade`(in marca varchar(75), mercadoria varchar(200), lote varchar(100), quantidade_antiga int, quantidade_nova int, matricula int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaQuantidade`(in marca varchar(75), mercadoria varchar(200), quantidade int, matricula int)
 BEGIN
 
- call CriarAtualizadoEm(mercadoria,marca,matricula,(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), quantidade_antiga, quantidade_nova, (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote= lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
+ call CriarAtualizadoEm(mercadoria,marca,matricula,(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),(select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),quantidade, (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
  
  update mercadoria
- set mercadoria.quantidade = quantidade_nova
- where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+ set mercadoria.quantidade = quantidade
+ where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -2077,4 +2011,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-24 16:23:49
+-- Dump completed on 2020-11-24 17:43:12
