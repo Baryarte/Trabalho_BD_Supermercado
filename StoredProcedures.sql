@@ -89,6 +89,25 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ConsultaEstoqueMercadoria` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaEstoqueMercadoria`()
+BEGIN
+select * from mercadoria;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `ConsultaMaiorDescontoMercadoriaTipoMercadoriaMarca` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -106,6 +125,25 @@ select a.idDesconto from (select t1.idDesconto, t1.nome, t1.valor, t1.validade, 
 left join historico_desconto t2 on t1.idDesconto = t2.idDesconto where (select idMercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idMercadoria) or (select idMarca from marca where marca.nome = marca) in (select t2.idMarca) or (select idTipo_mercadoria from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and mercadoria.lote = lote) in (select t2.idTipo_mercadoria)) a  where (datediff(a.validade, current_date) >= 0) order by valor desc limit 1;
 
 
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ConsultaMercadoriaQuantidade` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ConsultaMercadoriaQuantidade`()
+BEGIN
+select * from mercadoria where mercadoria.quantidade > 0;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -1681,6 +1719,76 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPeso` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPeso`(in mercadoria varchar(200), marca varchar(75), peso varchar(10))
+BEGIN
+
+update mercadoria
+set peso = peso
+where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca) and (datediff(mercadoria.data_fabricacao,current_timestamp()) > 0);
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPrecoCompra` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPrecoCompra`(in marca varchar(75), mercadoria varchar(200), lote varchar(100), preco_novo float, matricula int)
+BEGIN
+
+ call CriarAtualizadoEm(mercadoria,marca,matricula, (select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote= lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), preco_novo) ;
+ 
+ update mercadoria
+ set mercadoria.preco_compra = preco_novo
+ where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaPrecoVenda` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaPrecoVenda`(in marca varchar(75), mercadoria varchar(200), lote varchar(100), preco_novo float, matricula int)
+BEGIN
+
+ call CriarAtualizadoEm(mercadoria,marca,matricula, preco_novo, (select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.lote= lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
+ 
+ update mercadoria
+ set mercadoria.preco_venda = preco_novo
+ where mercadoria.nome = mercadoria and mercadoria.lote = lote and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca);
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `ModificarMercadoriaQuantidade` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -1694,7 +1802,7 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ModificarMercadoriaQuantidade`(in marca varchar(75), mercadoria varchar(200), quantidade int, matricula int)
 BEGIN
 
- call CriarAtualizadoEm(mercadoria,marca,matricula,(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),(select quantidade from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),quantidade, (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)), (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
+ call CriarAtualizadoEm(mercadoria,marca,matricula,(select preco_venda from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)),quantidade, (select preco_compra from mercadoria where mercadoria.nome = mercadoria and mercadoria.idMarca = (select idMarca from marca where marca.nome = marca)));
  
  update mercadoria
  set mercadoria.quantidade = quantidade
@@ -2011,4 +2119,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-11-24 17:43:12
+-- Dump completed on 2020-11-24 17:50:31
